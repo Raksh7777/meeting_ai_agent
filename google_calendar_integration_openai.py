@@ -1,11 +1,12 @@
 import os
-import datetime
+from datetime import datetime, timedelta, date
 from typing import Dict, Any, List
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
+import openai
 
 load_dotenv()
 
@@ -134,13 +135,13 @@ class GoogleCalendarAPIExecutor:
     def _get_free_slots(self, user_id: str, other_user_id: str, date: str = None) -> Dict[str, Any]:
         try:
             if date:
-                base_date = datetime.date.fromisoformat(date)
+                base_date =date.fromisoformat(date)
             else:
-                base_date = datetime.date.today() + datetime.timedelta(days=1)
+                base_date = date.today() + datetime.timedelta(days=1)
 
             start_hour = 9
             end_hour = 17
-            duration = datetime.timedelta(minutes=30)
+            duration = timedelta(minutes=30)
             
             contact_details = self._get_contact_details(other_user_id)
             if not contact_details.get("success", False):
@@ -150,8 +151,8 @@ class GoogleCalendarAPIExecutor:
             if not contact_email:
                 return {"success": False, "error": "Contact does not have an email address"}
             
-            time_min = datetime.datetime.combine(base_date, datetime.time(start_hour, 0))
-            time_max = datetime.datetime.combine(base_date, datetime.time(end_hour, 0))
+            time_min = datetime.combine(base_date, datetime.time(start_hour, 0))
+            time_max = datetime.combine(base_date, datetime.time(end_hour, 0))
             
             body = {
                 "timeMin": time_min.isoformat() + "Z",
@@ -172,8 +173,8 @@ class GoogleCalendarAPIExecutor:
             
             busy_periods = []
             for period in all_busy:
-                start = datetime.datetime.fromisoformat(period['start'].replace('Z', '+00:00'))
-                end = datetime.datetime.fromisoformat(period['end'].replace('Z', '+00:00'))
+                start = datetime.fromisoformat(period['start'].replace('Z', '+00:00'))
+                end = datetime.fromisoformat(period['end'].replace('Z', '+00:00'))
                 busy_periods.append((start, end))
             
             free_slots = []
@@ -232,8 +233,8 @@ class GoogleCalendarAPIExecutor:
     
     def _check_availability(self, user_id: str, start_time: str, end_time: str) -> Dict[str, Any]:
         try:
-            start_dt = datetime.datetime.fromisoformat(start_time.replace('Z', '+00:00'))
-            end_dt = datetime.datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+            start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+            end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
             
             events_result = self.calendar_service.events().list(
                 calendarId='primary',
@@ -312,7 +313,9 @@ class MeetingBookingMCPAgent:
         
         if intent['action'] == 'book_meeting':
             plan = self._create_execution_plan(intent, user_id)
+            print("here")
             results = self._execute_plan(plan)
+            print("here")
             return self._generate_response(prompt, results)
         else:
             return {"message": "I'm not sure what you want to do. Can you clarify?", "status": "error"}

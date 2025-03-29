@@ -1,6 +1,6 @@
 import json
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, date
 from google_calendar_integration_openai import  GoogleCalendarAPIExecutor
 import openai
 from dotenv import load_dotenv
@@ -63,11 +63,11 @@ class MeetingBookingMCPAgent:
         plan.append({
             "api": "calendar",
             "action": "get_free_slots",
-            "params": {"user_id": user_id, "other_user_id": "PLACEHOLDER", "date": datetime.date.today().isoformat()}
+            "params": {"user_id": user_id, "other_user_id": "PLACEHOLDER", "date": date.today().isoformat()}
         })
         return plan
 
-    def _execute_plan(self, plan: List[Dict[str, Any]], prompt: str) -> Dict[str, Any]:
+    def _execute_plan(self, plan: List[Dict[str, Any]]) -> Dict[str, Any]:
         results = {}
         for step in plan:
             result = self.api_executor.execute(step['api'], step['action'], step['params'])
@@ -80,6 +80,7 @@ class MeetingBookingMCPAgent:
 
     def _generate_response(self, prompt: str, results: Dict[str, Any]) -> Dict[str, Any]:
         if "contacts_find_contact" in results and results["contacts_find_contact"].get("success"):
+            print(results)
             if "calendar_get_free_slots" in results and results["calendar_get_free_slots"].get("success"):
                 slots = results["calendar_get_free_slots"].get("slots", [])
                 if slots:
